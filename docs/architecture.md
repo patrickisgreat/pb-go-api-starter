@@ -98,20 +98,41 @@ the data moved to a database, only this package would change.
 
 ### `internal/config`
 
-A struct embedding `baseconfig.Base` from gokit and adding service specific
-fields. `Load` reads environment variables into it. Everything reads
-`config.Config` rather than calling `os.Getenv` directly.
+A struct embedding `baseconfig.Base` and adding service specific fields. `Load`
+reads environment variables into it. Everything reads `config.Config` rather
+than calling `os.Getenv` directly.
+
+### Shared packages
+
+Four packages hold the plumbing that any service built from this template
+needs. They are kept apart from the quote-specific code so that they can be
+lifted into their own module later without untangling anything.
+
+- `internal/baseconfig`: the `Base` struct with `APP_NAME`, `HOST`, `PORT`,
+  `ENVIRONMENT` and `LOG_LEVEL`, and a generic `Load[T]` built on `envconfig`.
+- `internal/logger`: builds the process `slog.Logger` (JSON or pretty text,
+  optionally fanned out to the OpenTelemetry log exporter) and provides
+  `Get(ctx)`, which decorates the logger with the current trace and span ids.
+- `internal/telemetry`: `Setup` installs the OpenTelemetry trace, metric and
+  log providers from `OTEL_*` variables and returns a shutdown function;
+  `InstrumentHandler` and `WithTwirpServerInterceptor` wrap the HTTP server and
+  the Twirp service.
+- `internal/urn`: parses `namespace:collection:id` identifiers so that
+  validation can check the collection.
 
 ### `rpc`
 
 The protobuf source of truth. `pb_go_api_starter.proto` defines the messages and
 the `Quotes` service; `common_session.proto` defines the shared `UserSession`
-message and is generated into gokit rather than into this repository.
+message. Both are generated into `internal/generated`, the first as package
+`api` and the second as package `session`.
 
 ### `internal/generated`
 
-Output of `protoc` with the Go and Twirp plugins. It is git ignored and rebuilt by
-`task gen:rpc`, so nobody edits it and merge conflicts are impossible.
+Output of `protoc` with the Go and Twirp plugins. It is committed so that a clone
+builds without `protoc` installed, and rewritten by `task gen:rpc`; nobody edits
+it by hand. A pull request that changes a `.proto` file should include the
+regenerated output.
 
 ## Cross-cutting concerns
 
@@ -120,11 +141,11 @@ service layer wraps them as `twirp.Error` values, which the generated server
 serialises into the standard Twirp error JSON with the right HTTP status.
 Validation failures use `twirp.InvalidArgumentError`, which becomes HTTP 400.
 
-**Logging.** `log/slog` via gokit's `logger` package. The logger is attached to
+**Logging.** `log/slog` via `internal/logger`. The logger is attached to
 the request `context.Context`, so any function with a context can call
 `logger.Get(ctx)` and get trace-correlated structured logs.
 
-**Telemetry.** gokit's `otelsetup` configures the OpenTelemetry SDK from standard
+**Telemetry.** `internal/telemetry` configures the OpenTelemetry SDK from standard
 `OTEL_*` environment variables. Locally `OTEL_SDK_DISABLED=true` turns it off.
 The Twirp server interceptor creates a span per RPC and the HTTP wrapper records
 request metrics.

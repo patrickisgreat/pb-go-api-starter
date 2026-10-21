@@ -1,0 +1,37 @@
+# Release tagging. On every push to main, release-please reads the conventional
+# commit messages since the last tag, opens or updates a release pull request
+# with the version bump and changelog, and once that PR's checks pass merges it,
+# creating the tag and the GitHub release.
+#
+# Commits that are not conventional (feat:, fix:, ...) do not trigger a release.
+
+name: Release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    uses: patrickisgreat/actions-toolkit/.github/workflows/release-please.yml@v0
+    with:
+      release-type: go
+      auto-merge: true
+    permissions:
+      contents: write
+      pull-requests: write
+      checks: read
+      statuses: read
+      actions: read
+    secrets:
+      # Optional personal access token. The default GITHUB_TOKEN cannot trigger
+      # other workflows, so without it the release commit does not run CI.
+      RELEASE_TOKEN: ${{ secrets.RELEASE_TOKEN }}

@@ -42,12 +42,11 @@ service has no external dependencies at runtime. A health check is served at
 
 Prerequisites:
 
-- [Go](https://go.dev/doc/install) 1.23 or newer
+- [Go](https://go.dev/doc/install) 1.26 or newer
 - [Task](https://taskfile.dev): `go install github.com/go-task/task/v3/cmd/task@latest`
 - Docker, only if you want to build the container image or regenerate the API docs
-- Access to the `github.com/soundcloud/gokit/v2` module. It is a private module, so
-  set `GOPRIVATE=github.com/soundcloud/*` and make sure `git` can authenticate to
-  GitHub before running `go mod download`.
+
+Every dependency is a public Go module, so a plain `go mod download` works.
 
 Install the toolchain and generate code:
 
@@ -109,16 +108,20 @@ cmd/app/            main package: wires config, telemetry, handlers and the HTTP
 internal/
   api/              one file per RPC: validation and orchestration
   appserver/        HTTP server lifecycle, router, health check, shared ServerContext
+  baseconfig/       the environment variables every service needs, and the loader
   config/           typed configuration loaded from environment variables
   handlers/         the type that satisfies the generated Twirp service interface
+  logger/           slog setup and trace-correlated loggers from a context
   quoterepo/        data access: the embedded quotes.json and a random picker
   quoteservice/     business logic between handlers and the repository
-  generated/        protoc output (git ignored, run task gen:rpc)
+  telemetry/        OpenTelemetry SDK setup, HTTP and Twirp instrumentation
+  urn/              parser for the namespace:collection:id identifiers in requests
+  generated/        protoc output, committed; task gen:rpc rewrites it
 rpc/                protobuf definitions
 end_to_end/         black box tests that run against a live server
 docs/               MkDocs site: architecture, configuration, API reference
 golang-learning/    a guided tour of Go using this codebase
-terraform/          AWS ECS service, alerts and per environment config
+terraform/          composition of tf-tools modules into an ECS service, alerts, per environment config
 ```
 
 A request flows `router -> generated Twirp server -> handlers -> api -> quoteservice
@@ -141,6 +144,15 @@ every task; the ones you will use most:
 | `task test`       | Tidy, lint, vet, then run unit tests                         |
 | `task test:e2e`   | Build, start the binary, run the end to end tests            |
 | `task upgrade`    | Bump all dependencies                                        |
+
+Continuous integration runs the same checks on every pull request through
+reusable workflows from
+[actions-toolkit](https://github.com/patrickisgreat/actions-toolkit): Go
+formatting, vet, lint and tests under the race detector, a cross-compile for
+Linux on amd64 and arm64, Terraform fmt, validate, tflint and trivy, and a build
+and scan of the container image. Merges to `main` go through release-please,
+which turns conventional commit messages into a tagged release. See
+[docs/development.md](docs/development.md#continuous-integration-and-releases).
 
 Changing the API is a four step loop: edit `rpc/pb_go_api_starter.proto`, run
 `task gen:rpc`, implement the new method on `handlers.Quotes`, add tests.
@@ -178,15 +190,14 @@ Terraform; see [docs/configuration.md](docs/configuration.md).
 ## Deployment
 
 `Dockerfile` is a two stage build that produces a static binary on a `scratch`
-image. `terraform/` defines an ECS Fargate service and its alerts, with one
-`config/<environment>/` directory per target account. The
-[deployment guide](docs/deployment.md) walks through building the image, pushing to
-ECR and applying Terraform.
-
-Links:
-
-- [CI pipeline history](https://github.com/patrickisgreat/pb-go-api-starter/actions)
-- [New Relic dashboard](https://one.newrelic.com/nr1-core/open-instrumentation-explorer/summary/NDE2ODgxNnxFWFR8U0VSVklDRXwtNDI4NDAyMTc2Njc0NTY2MTUwNA?account=4168816)
+image. `terraform/` defines an ECR repository, an ECS Fargate service behind an
+application load balancer, CloudWatch alarms for error rate and latency, and one
+`config/<environment>/` directory per target account. The reusable pieces (ECR,
+IAM roles, the ECS service, the SNS topic) come from
+[tf-tools](https://github.com/patrickisgreat/tf-tools), a module library kept in
+its own repository; this one only holds the composition. The
+[deployment guide](docs/deployment.md) walks through building the image, pushing
+to ECR and applying Terraform.
 
 ## Documentation
 

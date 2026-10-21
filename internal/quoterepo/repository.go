@@ -7,7 +7,7 @@ import (
 	"log/slog"
 	"math/rand"
 
-	"github.com/soundcloud/gokit/v2/logger"
+	"github.com/patrickisgreat/pb-go-api-starter/internal/logger"
 )
 
 //go:embed quotes.json

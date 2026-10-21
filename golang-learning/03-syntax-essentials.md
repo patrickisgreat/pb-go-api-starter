@@ -80,7 +80,7 @@ type StartParams struct {
 }
 
 appserver.Start(ctx, &appserver.StartParams{
-	Handler: instrumentation.InstrumentHandler("Quotes", router),
+	Handler: telemetry.InstrumentHandler("Quotes", router),
 	Addr:    net.JoinHostPort(config.Config.Host, fmt.Sprintf("%d", config.Config.Port)),
 })
 ```
@@ -206,7 +206,7 @@ of unknown shape". Get a concrete value back out with a type assertion:
 msg, ok := response["msg"].(string)
 ```
 
-Generics exist (`func Load[T any](cfg *T) error` in gokit) but you will rarely
+Generics exist (`func Load[T any](cfg *T) error` in `internal/baseconfig`) but you will rarely
 need to write them. Reading them is enough for now.
 
 ## What is not there

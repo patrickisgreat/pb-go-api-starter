@@ -1,0 +1,61 @@
+# Pull request and main-branch checks. Every job is a reusable workflow from
+# github.com/patrickisgreat/actions-toolkit, pinned to its v0 major tag; the
+# inputs below are the only thing this repository owns.
+#
+# The generated Twirp and protobuf code under internal/generated is committed,
+# so the Go jobs need no protoc step. `task gen:rpc` regenerates it.
+
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  go:
+    name: Go
+    uses: patrickisgreat/actions-toolkit/.github/workflows/go-ci.yml@v0
+    with:
+      # The end to end suite starts the real binary, so build it first and give
+      # it the same environment .env/.env.test provides locally. Everything runs
+      # under the race detector.
+      test-command: |
+        go build -o cmd/app/bin/pb-go-api-starter ./cmd/app
+        export APP_NAME=pb-go-api-starter HOST=127.0.0.1 PORT=8000 \
+          ENVIRONMENT=test LOG_LEVEL=error OTEL_SDK_DISABLED=true
+        go test -race -coverprofile=coverage.out -covermode=atomic ./...
+      coverage: false
+      build-targets: '["linux/amd64","linux/arm64"]'
+      build-command: CGO_ENABLED=0 go build -o /dev/null ./cmd/app
+
+  terraform:
+    name: Terraform
+    uses: patrickisgreat/actions-toolkit/.github/workflows/terraform-ci.yml@v0
+    with:
+      directories: terraform
+      version: '1.15.6'
+    secrets:
+      # Read-only deploy key for github.com/patrickisgreat/tf-tools, which the
+      # module sources in terraform/ clone over SSH. Without it the validate job
+      # cannot fetch the modules; fmt, tflint and trivy still run.
+      MODULES_SSH_KEY: ${{ secrets.MODULES_SSH_KEY }}
+
+  image:
+    name: Container image
+    uses: patrickisgreat/actions-toolkit/.github/workflows/docker-build.yml@v0
+    with:
+      # Build and scan only. Publishing is a deployment concern, not a check.
+      push: false
+      platforms: linux/amd64
+    permissions:
+      contents: read
+      packages: write
+      id-token: write

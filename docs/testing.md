@@ -75,6 +75,10 @@ then this module. `task format` fixes import grouping automatically.
 `task vet` runs `go vet`, which catches things the compiler allows but that are
 almost always bugs, such as printf format mismatches and unreachable code.
 
+CI runs all of the above plus both test suites under `go test -race`. If a test
+passes locally but fails in CI with a data race report, the race is real; the
+detector only reports accesses that actually happened.
+
 ## What is not tested
 
 `cmd/app/main.go`, `internal/appserver/server.go` and `internal/appserver/context.go`

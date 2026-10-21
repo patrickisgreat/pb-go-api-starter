@@ -1,26 +1,26 @@
-data "aws_ssm_parameter" "environment" {
-  name = "/aft/account-request/custom-fields/environment"
-}
-
-data "aws_ssm_parameter" "base_account_name" {
-  name = "/aft/account-request/custom-fields/base_account_name"
-}
-
-data "aws_region" "current" {}
-
-data "aws_vpc" "sc" {
+data "aws_vpc" "this" {
   filter {
     name   = "tag:Name"
-    values = ["sc-default-vpc"]
+    values = [var.vpc_name]
   }
 }
 
 data "aws_subnets" "private" {
   filter {
     name   = "vpc-id"
-    values = [data.aws_vpc.sc.id]
+    values = [data.aws_vpc.this.id]
   }
   tags = {
     Tier = "Private"
+  }
+}
+
+data "aws_subnets" "public" {
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.this.id]
+  }
+  tags = {
+    Tier = "Public"
   }
 }

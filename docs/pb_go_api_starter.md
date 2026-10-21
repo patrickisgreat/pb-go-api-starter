@@ -76,7 +76,7 @@ Metadata about the interaction between a user and the system
 | scopes | [string](#string) | repeated | OAuth scopes for this session |
 | features | [string](#string) | repeated | business features that are enabled for this session |
 | app_variant_ids | [int32](#int32) | repeated | propagate variants for A/B testing |
-| app_requested_features | [RequestedFeature](#proto-patrickisgreat-common-session-RequestedFeature) | repeated | features requested in Firabase A/B tests |
+| app_requested_features | [RequestedFeature](#proto-patrickisgreat-common-session-RequestedFeature) | repeated | features requested in A/B tests |
 
 
 

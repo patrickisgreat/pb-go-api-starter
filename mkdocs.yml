@@ -26,6 +26,5 @@ plugins:
   - techdocs-core
 theme:
   name: material
-  logo: images/sc-logo-cloud-white.svg
   features:
     - tabs

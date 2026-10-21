@@ -8,9 +8,6 @@ plan.tfplan
 .vscode
 *.swp
 
-# generated
-internal/generated
-
 # bin
 bin
 __debug*
@@ -36,4 +33,6 @@ coverage
 coverage.out
 testapp
 
-.git-credentials
+
+# actions-toolkit checkout made by the reusable workflows in CI
+.toolkit

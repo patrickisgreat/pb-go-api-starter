@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package proto.patrickisgreat.pb_go_api_starter.api;
 
-option go_package="pb_go_api_starter/api";
+option go_package = "github.com/patrickisgreat/pb-go-api-starter/internal/generated/pb_go_api_starter/api;api";
 
 import "google/protobuf/wrappers.proto";
 import "common_session.proto";

@@ -1,4 +1,4 @@
-aws_profile = "062107869946"
+aws_profile = "production"
 environment = "production"
 
 ecs_min_tasks = 3

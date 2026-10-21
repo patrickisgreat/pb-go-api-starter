@@ -1,16 +1,58 @@
 variable "aws_profile" {
-  description = "AWS account profile"
+  description = "AWS CLI profile to deploy with"
   type        = string
 }
 
+variable "aws_region" {
+  description = "AWS region to deploy to"
+  type        = string
+  default     = "eu-central-1"
+}
+
 variable "commit_sha" {
-  description = "The commit being deployed, used for the docker image tags"
+  description = "The commit being deployed, used for the docker image tag"
   type        = string
 }
 
 variable "environment" {
-  description = "The environment to deploy to"
+  description = "The environment to deploy to: development, staging or production"
   type        = string
+
+  validation {
+    condition     = contains(["development", "staging", "production"], var.environment)
+    error_message = "environment must be development, staging or production."
+  }
+}
+
+variable "owner" {
+  description = "Who owns the service. Written to resource tags and telemetry attributes."
+  type        = string
+  default     = "patrickisgreat"
+}
+
+# Networking
+variable "vpc_name" {
+  description = "Name tag of the VPC to deploy into"
+  type        = string
+  default     = "default"
+}
+
+variable "internal" {
+  description = "Keep the load balancer internal to the VPC instead of internet-facing"
+  type        = bool
+  default     = false
+}
+
+variable "certificate_arn" {
+  description = "ACM certificate for HTTPS on the load balancer. When null the service is served over plain HTTP."
+  type        = string
+  default     = null
+}
+
+variable "ingress_cidr_ranges" {
+  description = "CIDR ranges allowed to reach the load balancer"
+  type        = list(string)
+  default     = ["0.0.0.0/0"]
 }
 
 # ECS
@@ -33,25 +75,25 @@ variable "memory" {
 }
 
 variable "api_healthcheck_path" {
-  description = "The route that the lambda should healthcheck on"
+  description = "The route the load balancer health checks"
   type        = string
   default     = "/-/health"
 }
 
 variable "ecs_min_tasks" {
-  description = "Minimum number of api containers to run per region"
+  description = "Minimum number of api containers to run"
   type        = number
   default     = 1
 }
 
 variable "ecs_desired_tasks" {
-  description = "Desired number of api containers to run per region"
+  description = "Desired number of api containers to run"
   type        = number
   default     = 1
 }
 
 variable "ecs_max_tasks" {
-  description = "Maximum number of api containers to run per region"
+  description = "Maximum number of api containers to run"
   type        = number
   default     = 3
 }
@@ -76,7 +118,7 @@ variable "container_port" {
 
 # Alerts
 variable "alerts_enabled" {
-  description = "Whether or not to enable alerts for the environemnt"
+  description = "Whether or not to create alarms for the environment"
   type        = bool
   default     = false
 }
@@ -87,51 +129,32 @@ variable "alerts_runbook_url" {
   default     = ""
 }
 
+variable "alert_emails" {
+  description = "Email addresses that receive alarm notifications"
+  type        = list(string)
+  default     = []
+}
+
 variable "error_duration" {
   description = "Set the duration in minutes for the high errors alert"
   type        = number
   default     = 2
 }
 
+variable "error_threshold" {
+  description = "Set the threshold percentage for the high errors alert"
+  type        = number
+  default     = 5
+}
+
 variable "latency_threshold" {
-  description = "Set the threshold for the high response time alert"
-  type        = string
-  default     = "3"
+  description = "Set the p95 threshold in seconds for the high response time alert"
+  type        = number
+  default     = 3
 }
 
 variable "latency_duration" {
   description = "Set the duration in minutes for the high response time alert"
   type        = number
   default     = 2
-}
-
-variable "error_threshold" {
-  description = "Set the threshold percentage for the high errors alert"
-  type        = string
-  default     = "5"
-}
-
-variable "slack" {
-  description = <<-EOF
-  Optionally define slack notification behaviour here. By default, when present, this will create a notification channel
-  for slack and integrates the channel into existing workflow which includes PagerDuty destination. To just send to slack only, i.e. warning/non-paging alerts, set the warn flag to true which will create a separate workflow just for slack destination.
-EOF
-  type = object({
-    channel = optional(string)
-    warn    = optional(bool, false)
-  })
-  default = {
-    channel = "api-team-alerts"
-  }
-}
-
-variable "slack_additional" {
-  description = <<-EOF
-  Optionally define additional slack channel where slack alerts should go.
-EOF
-  type = object({
-    channel = optional(string)
-    warn    = optional(bool, false)
-  })
-  default = {}
 }

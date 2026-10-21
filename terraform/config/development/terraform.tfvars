@@ -1,2 +1,2 @@
-aws_profile = "045673982243"
+aws_profile = "development"
 environment = "development"

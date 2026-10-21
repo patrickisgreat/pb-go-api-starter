@@ -5,12 +5,11 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/soundcloud/gokit/v2/opentelemetry/instrumentation"
-
 	"github.com/patrickisgreat/pb-go-api-starter/internal/appserver"
 	"github.com/patrickisgreat/pb-go-api-starter/internal/config"
 	"github.com/patrickisgreat/pb-go-api-starter/internal/generated/pb_go_api_starter/api"
 	"github.com/patrickisgreat/pb-go-api-starter/internal/handlers"
+	"github.com/patrickisgreat/pb-go-api-starter/internal/telemetry"
 )
 
 func main() {
@@ -20,12 +19,12 @@ func main() {
 
 	quotesServer := api.NewQuotesServer(
 		&handlers.Quotes{ServerContext: appserver.GetServerContext()},
-		instrumentation.WithTwirpServerInterceptor(),
+		telemetry.WithTwirpServerInterceptor(),
 	)
 	router := appserver.NewRouter(quotesServer)
 
 	appserver.Start(ctx, &appserver.StartParams{
-		Handler: instrumentation.InstrumentHandler("Quotes", router),
+		Handler: telemetry.InstrumentHandler("Quotes", router),
 		Addr:    net.JoinHostPort(config.Config.Host, fmt.Sprintf("%d", config.Config.Port)),
 	})
 }

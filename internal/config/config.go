@@ -4,8 +4,8 @@ import (
 	"context"
 	"log/slog"
 
-	"github.com/soundcloud/gokit/v2/baseconfig"
-	"github.com/soundcloud/gokit/v2/logger"
+	"github.com/patrickisgreat/pb-go-api-starter/internal/baseconfig"
+	"github.com/patrickisgreat/pb-go-api-starter/internal/logger"
 )
 
 type config struct {
@@ -17,7 +17,7 @@ type config struct {
 var Config config
 
 func Load(ctx context.Context) {
-	err := baseconfig.Load[config](&Config)
+	err := baseconfig.Load(&Config)
 	if err != nil {
 		logger.Get(ctx).Error("failed loading app config", slog.Any("err", err))
 		panic("failed loading app config")

@@ -1,84 +1,147 @@
-module "api_service" {
-  # TODO: Replace with alternative Terraform module - was: source = "github.com/soundcloud/tf-common//modules/aws-ecs-service?ref=aws-ecs-service@3.48.0"
-  source       = "github.com/soundcloud/tf-common//modules/aws-ecs-service?ref=aws-ecs-service@3.48.0"
-  service_name = var.system
-  aws_region   = local.aws_region
-  aws_profile  = var.aws_profile
-  cluster_name = local.ecs_cluster
-  environment  = local.environment
-  vpc_id       = data.aws_vpc.sc.id
-  cpu          = var.cpu
-  memory       = var.memory
-  subnets      = data.aws_subnets.private.ids
-  environment_variables = merge(local.telemetry_config, {
-    APP_NAME    = var.system
-    LOG_LEVEL   = local.log_level
-    ENVIRONMENT = local.environment
-    PORT        = var.container_port
-  })
-  docker_image_url   = local.container_image
-  ecs_min_tasks      = var.ecs_min_tasks
-  ecs_desired_tasks  = var.ecs_desired_tasks
-  ecs_max_tasks      = var.ecs_max_tasks
-  scaleup_cooldown   = var.scaleup_cooldown
-  scaledown_cooldown = var.scaledown_cooldown
-  capacity_provider_strategy = {
-    FARGATE      = local.on_demand_capacity
-    FARGATE_SPOT = local.spot_capacity
-  }
-  minimum_non_spot_tasks = 1
-  cpu_architecture       = "ARM64"
-  target_tracking_policy = {
-    target_value           = 40
-    scaleup_cooldown       = 60
-    scaledown_cooldown     = 60
-    predefined_metric_type = "ECSServiceAverageCPUUtilization"
-    resource_label         = null
-  }
-  target_tracking_policy_enabled = true
-  use_docker_healthcheck         = false
-  virtual_node_healthcheck_config = {
-    healthy_threshold   = 3
-    unhealthy_threshold = 2
-    interval            = 5
-    timeout             = 2
-    path                = var.api_healthcheck_path
-  }
-  enable_execute_command            = true
-  enable_app_mesh                   = true
-  mesh_name                         = local.short_env_name
-  debug_app_mesh                    = local.environment == "development"
-  ingress_cidr_ranges               = ["10.0.0.0/8"]
-  mesh_backends                     = []
-  policies                          = []
-  container_port                    = var.container_port
-  envoy_listener_max_retries        = 5
-  envoy_image_version               = "v1.29.6.1-prod"
-  container_secrets_manager_secrets = []
-  enable_new_relic_sidecar          = false
-  enable_otel_collector_sidecar     = true
-  enable_ecs_container_metrics      = false
-  tags = merge(local.tags, {
-    Component = "api"
-  })
+# Reusable building blocks come from github.com/patrickisgreat/tf-tools. The
+# ref is pinned per module source; bump every ref together when upgrading.
+# What remains here is the composition specific to this service.
+
+module "ecr" {
+  source = "git::ssh://git@github.com/patrickisgreat/tf-tools.git//modules/aws/ecr?ref=main"
+
+  name                       = var.system
+  image_tag_mutability       = "IMMUTABLE"
+  keep_last_n_images         = 30
+  expire_untagged_after_days = 14
+  tags                       = local.tags
 }
 
-module "alerts" {
-  # TODO: Replace with alternative Terraform module - was: source = "github.com/soundcloud/tf-common//modules/grafana-alerts?ref=grafana-alerts@1.5.0"
-  source = "github.com/soundcloud/tf-common//modules/grafana-alerts?ref=grafana-alerts@1.5.0"
+module "execution_role" {
+  source = "git::ssh://git@github.com/patrickisgreat/tf-tools.git//modules/aws/iam-role?ref=main"
 
-  count        = var.alerts_enabled ? 1 : 0
-  system       = var.system
-  component    = "api"
-  environment  = var.environment
-  service_name = "${var.system}-api"
+  name                  = "${local.name}-execution"
+  description           = "Lets ECS pull the ${var.system} image and write its logs"
+  trusted_role_services = ["ecs-tasks.amazonaws.com"]
+  managed_policy_arns   = ["arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"]
+  tags                  = local.tags
+}
 
-  owner = "dx-team"
-  repo  = "patrickisgreat/pb-go-api-starter"
+data "aws_iam_policy_document" "execute_command" {
+  statement {
+    actions = [
+      "ssmmessages:CreateControlChannel",
+      "ssmmessages:CreateDataChannel",
+      "ssmmessages:OpenControlChannel",
+      "ssmmessages:OpenDataChannel",
+    ]
+    resources = ["*"]
+  }
+}
 
-  slack_channel          = "dx-alerts"
-  enable_pagerduty       = false
-  pagerduty_service_name = "none"
+module "task_role" {
+  source = "git::ssh://git@github.com/patrickisgreat/tf-tools.git//modules/aws/iam-role?ref=main"
 
-  alert_on_no_data = false
+  name                  = "${local.name}-task"
+  description           = "Permissions of the running ${var.system} container"
+  trusted_role_services = ["ecs-tasks.amazonaws.com"]
+  inline_policies = {
+    execute-command = data.aws_iam_policy_document.execute_command.json
+  }
+  tags = local.tags
+}
+
+module "cluster" {
+  source = "git::ssh://git@github.com/patrickisgreat/tf-tools.git//modules/aws/ecs-cluster?ref=main"
+
+  name = local.ecs_cluster
+  tags = local.tags
+}
+
+resource "aws_cloudwatch_log_group" "this" {
+  name              = "/ecs/${local.name}"
+  retention_in_days = 30
+  tags              = local.tags
+}
+
+resource "aws_security_group" "service" {
+  name        = "${local.name}-service"
+  description = "ECS tasks for ${local.name}"
+  vpc_id      = data.aws_vpc.this.id
+  tags        = local.tags
+
+  ingress {
+    description     = "From load balancer"
+    from_port       = var.container_port
+    to_port         = var.container_port
+    protocol        = "tcp"
+    security_groups = [module.alb.security_group_id]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+module "api_service" {
+  source = "git::ssh://git@github.com/patrickisgreat/tf-tools.git//modules/aws/ecs-service?ref=main"
+
+  name        = var.system
+  cluster_arn = module.cluster.arn
+  launch_type = "FARGATE"
+  cpu         = tostring(var.cpu)
+  memory      = tostring(var.memory)
+
+  # Autoscaling owns the running count from here on, so start at its floor.
+  desired_count          = var.ecs_min_tasks
+  execution_role_arn     = module.execution_role.arn
+  task_role_arn          = module.task_role.arn
+  enable_execute_command = true
+
+  subnet_ids         = data.aws_subnets.private.ids
+  security_group_ids = [aws_security_group.service.id]
+  target_group_arn   = module.alb.target_group_arn
+  lb_container_name  = var.system
+  lb_container_port  = var.container_port
+
+  container_definitions = jsonencode([
+    {
+      name      = var.system
+      image     = local.container_image
+      essential = true
+      portMappings = [
+        { containerPort = var.container_port, protocol = "tcp" }
+      ]
+      environment = [
+        for k, v in merge(local.telemetry_config, {
+          APP_NAME    = var.system
+          LOG_LEVEL   = local.log_level
+          ENVIRONMENT = local.environment
+          PORT        = var.container_port
+        }) : { name = k, value = tostring(v) }
+      ]
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          awslogs-group         = aws_cloudwatch_log_group.this.name
+          awslogs-region        = var.aws_region
+          awslogs-stream-prefix = var.system
+        }
+      }
+    }
+  ])
+
+  tags = merge(local.tags, { Component = "api" })
+}
+
+module "scaling" {
+  source = "git::ssh://git@github.com/patrickisgreat/tf-tools.git//modules/aws/ecs-autoscaling?ref=main"
+
+  cluster_name = module.cluster.name
+  service_name = module.api_service.service_name
+
+  min_capacity       = var.ecs_min_tasks
+  max_capacity       = var.ecs_max_tasks
+  cpu_target_percent = 40
+  scale_out_cooldown = var.scaleup_cooldown
+  scale_in_cooldown  = var.scaledown_cooldown
+  tags               = local.tags
 }

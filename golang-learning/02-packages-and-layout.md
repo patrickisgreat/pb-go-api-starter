@@ -31,24 +31,23 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/soundcloud/gokit/v2/opentelemetry/instrumentation"
+	"github.com/twitchtv/twirp"
 
 	"github.com/patrickisgreat/pb-go-api-starter/internal/appserver"
-	"github.com/patrickisgreat/pb-go-api-starter/internal/config"
 	proto "github.com/patrickisgreat/pb-go-api-starter/internal/generated/pb_go_api_starter/api"
 )
 ```
 
-This is `cmd/app/main.go`. Three things to notice:
+This is `internal/api/flaky.go`. Three things to notice:
 
 1. Imports are full paths. Standard library packages have short paths
    (`context`, `net/http`); everything else starts with the module path.
 2. The blank lines separate groups: standard library, third party, this module.
    `goimports` maintains this ordering automatically (chapter 10).
 3. `proto "..."` gives the package a local alias. The generated package is named
-   `api`, which would collide with `internal/api`, so it is imported as `proto`.
-   Without an alias you refer to a package by its declared name, which is the
-   last path element: `appserver.Start`, `config.Config`.
+   `api`, which would collide with the importing package `api`, so it is
+   imported as `proto`. Without an alias you refer to a package by its declared
+   name, which is the last path element: `appserver.Start`, `twirp.InternalError`.
 
 Unused imports are a compile error, not a warning. So are unused local variables.
 Your editor's Go plugin will add and remove imports as you type; let it.
@@ -99,11 +98,15 @@ order hard to follow and this repository does not use it.
 cmd/app/            package main
 internal/api        package api
 internal/appserver  package appserver
+internal/baseconfig package baseconfig
 internal/config     package config
 internal/handlers   package handlers
+internal/logger     package logger
 internal/quoterepo  package quoterepo
 internal/quoteservice package quoteservice
-internal/generated  packages written by protoc, git ignored
+internal/telemetry  package telemetry
+internal/urn        package urn
+internal/generated  packages written by protoc; committed, never hand-edited
 rpc/                .proto files, not Go
 end_to_end/         package end_to_end, test only
 ```
@@ -125,11 +128,14 @@ use, it moves to a `pkg/` directory or its own module.
 
 ```
 main → handlers → api → quoteservice → quoterepo
-  ↘ appserver ↗           ↘ config
+  ↘ appserver ↗    ↘ urn              ↘ logger
+      ↘ config, logger, telemetry
 ```
 
 `appserver` builds the `ServerContext` from `quoterepo` and `quoteservice`, and
-`api` receives that context. Go forbids import cycles outright: if `quoterepo`
+`api` receives that context. `baseconfig`, `logger`, `telemetry` and `urn` sit
+at the bottom: they import nothing else from the repository, so anything can
+import them. Go forbids import cycles outright: if `quoterepo`
 tried to import `api`, the build would fail. Layouts like this one are shaped as
 much by that rule as by taste.
 

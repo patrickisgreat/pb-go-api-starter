@@ -9,7 +9,7 @@ Every workflow is a [Task](https://taskfile.dev) task defined in `Taskfile.yml`.
 | ------------------- | ----------------------------------------------------------- | -------------------------------------------------- |
 | `task run`          | `air`                                                       | Hot reload. Rebuilds and restarts on save          |
 | `task build`        | `task gen:rpc` then `go build -o cmd/app/bin/pb-go-api-starter` | Static binary, `GOOS` defaults to `darwin`     |
-| `task gen:rpc`      | `protoc` with the Go and Twirp plugins                      | Wipes and recreates `internal/generated`           |
+| `task gen:rpc`      | `protoc` with the Go and Twirp plugins                      | Wipes and recreates `internal/generated`; commit the result |
 | `task gen:docs`     | `protoc-gen-doc` in Docker                                  | Rewrites `docs/pb_go_api_starter.md`               |
 | `task format`       | `goimports -w -local <module>`                              | Groups imports: stdlib, third party, this module   |
 | `task lint`         | `golangci-lint run`                                         | Runs `format` first                                |
@@ -53,9 +53,42 @@ The [API guide](api.md#adding-an-rpc) has the detailed version.
 ## Dependencies
 
 `go.mod` pins direct dependencies; `go.sum` pins checksums for everything. After
-adding an import, run `task tidy` so both files are updated. The
-`github.com/soundcloud/gokit/v2` module is private; see
-[Getting started](getting-started.md#2-private-module-access).
+adding an import, run `task tidy` so both files are updated. Every dependency is
+a public module.
+
+## Continuous integration and releases
+
+`.github/workflows/ci.yml` runs on every pull request and on `main`. It is
+three calls to reusable workflows in
+[actions-toolkit](https://github.com/patrickisgreat/actions-toolkit), pinned to
+`@v0`:
+
+| Job             | Checks                                                                               |
+| --------------- | ------------------------------------------------------------------------------------ |
+| Go              | `gofmt`, `go vet`, `golangci-lint`, unit and end to end tests with `-race`, cross-compile for linux/amd64 and linux/arm64 |
+| Terraform       | `terraform fmt`, `init` and `validate` of `terraform/`, `tflint`, `trivy` config scan |
+| Container image | Builds the `Dockerfile` and scans the image with `trivy`; nothing is pushed         |
+
+The Terraform validate job clones the tf-tools modules over SSH, so the
+repository needs a `MODULES_SSH_KEY` secret holding a read-only deploy key for
+`patrickisgreat/tf-tools`. Without it that one job fails and the others are
+unaffected.
+
+`.github/workflows/release.yml` runs on every push to `main`. release-please
+reads the conventional commit messages since the last tag (`feat:`, `fix:` and
+so on), opens or updates a release pull request carrying the version bump and
+`CHANGELOG.md`, waits for its checks, and merges it. The merge creates the
+`vX.Y.Z` tag and the GitHub release. Two settings make this work:
+
+- Repository settings, Actions, General: allow GitHub Actions to create and
+  approve pull requests.
+- Optionally a `RELEASE_TOKEN` secret with a personal access token. Pushes made
+  with the default token do not trigger other workflows, so without it the
+  release commit itself is not CI-checked.
+
+Commit messages therefore follow [Conventional Commits](https://www.conventionalcommits.org):
+`feat(api): add ListQuotes` is a minor bump, `fix(quoterepo): ...` a patch, and
+a `BREAKING CHANGE:` footer a major.
 
 ## Backstage
 

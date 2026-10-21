@@ -3,9 +3,10 @@ package api
 import (
 	"slices"
 
-	common "github.com/soundcloud/gokit/v2/twirp/common_session"
-	"github.com/soundcloud/gokit/v2/urn"
 	"github.com/twitchtv/twirp"
+
+	"github.com/patrickisgreat/pb-go-api-starter/internal/generated/pb_go_api_starter/session"
+	"github.com/patrickisgreat/pb-go-api-starter/internal/urn"
 )
 
 func isValidUrn(urnValue string, urnTypes []string) bool {
@@ -21,8 +22,8 @@ func isValidUrn(urnValue string, urnTypes []string) bool {
 	return true
 }
 
-func validateUserSession(session *common.UserSession) twirp.Error {
-	if session.GetUserUrn().GetValue() != "" && !isValidUrn(session.GetUserUrn().GetValue(), []string{"users"}) {
+func validateUserSession(userSession *session.UserSession) twirp.Error {
+	if userSession.GetUserUrn().GetValue() != "" && !isValidUrn(userSession.GetUserUrn().GetValue(), []string{"users"}) {
 		return twirp.InvalidArgumentError("userSession.userUrn", "invalid user urn")
 	}
 

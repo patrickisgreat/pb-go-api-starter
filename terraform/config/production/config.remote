@@ -1,3 +1,5 @@
-bucket = "062107869946-api-core-prod-production-tf-state"
-dynamodb_table = "062107869946-api-core-prod-production-tf-lock"
-role_arn = "arn:aws:iam::145582369311:role/tf-state-manager-062107869946"
+# State backend for the production environment. Create the bucket and table once,
+# then: terraform init -backend-config=config/production/config.remote
+bucket         = "pb-go-api-starter-tfstate-prod"
+dynamodb_table = "pb-go-api-starter-tflock-prod"
+region         = "eu-central-1"

@@ -1,5 +1,8 @@
 version: '3'
 
+vars:
+  GEN_MODULE: github.com/patrickisgreat/pb-go-api-starter/internal/generated
+
 dotenv: ['.env/.env.{{.ENV}}', '.env/.env.local']
 
 tasks:
@@ -146,7 +149,8 @@ tasks:
       - internal/generated/**
     cmds:
       - rm -rf internal/generated && mkdir -p internal/generated
-      - protoc pb_go_api_starter.proto --proto_path=rpc --go_out=./internal/generated --twirp_out=./internal/generated
+      - protoc pb_go_api_starter.proto common_session.proto --proto_path=rpc --go_out=./internal/generated --go_opt=module={{.GEN_MODULE}}
+      - protoc pb_go_api_starter.proto --proto_path=rpc --twirp_out=./internal/generated --twirp_opt=module={{.GEN_MODULE}}
 
   gen:docs:
     desc: Generate rpc docs

@@ -3,7 +3,7 @@ kind: API
 spec:
   type: grpc
   lifecycle: production
-  owner: principal-engineers-team
+  owner: patrickisgreat
   definition:
     $text: ./rpc/pb_go_api_starter.proto
 metadata:
@@ -12,17 +12,17 @@ metadata:
 apiVersion: backstage.io/v1alpha1
 kind: Component
 spec:
-  type: foundational_service
+  type: service
   lifecycle: production
-  owner: principal-engineers-team
+  owner: patrickisgreat
   providesApis:
     - pb_go_api_starter.proto
 metadata:
   name: pb-go-api-starter
   description: A random quotes service
   tags:
-    - golden-path
     - go
+    - twirp
   annotations:
     backstage.io/techdocs-ref: dir:.
     github.com/project-slug: patrickisgreat/pb-go-api-starter

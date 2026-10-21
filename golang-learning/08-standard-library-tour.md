@@ -63,7 +63,7 @@ log.Info("Server started", "addr", sp.Addr)
 `slog` (Go 1.21+) logs key-value pairs rather than formatted strings, so output
 is machine-readable JSON in production and pretty text locally. Attributes can be
 loose alternating keys and values (`"addr", sp.Addr`) or typed with
-`slog.String`, `slog.Int`, `slog.Any`. gokit's `logger.Get(ctx)` returns a
+`slog.String`, `slog.Int`, `slog.Any`. `logger.Get(ctx)` in `internal/logger` returns a
 `*slog.Logger` that already carries the trace and span IDs from the context, so
 log lines correlate with traces without any effort from you.
 

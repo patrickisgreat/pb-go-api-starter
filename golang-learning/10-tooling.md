@@ -41,24 +41,28 @@ failure as a bug.
 A runner for dozens of linters with one configuration file. `.golangci.yml`:
 
 ```yaml
+version: "2"
+
 linters:
+  exclusions:
+    paths:
+      - rpc
+
+formatters:
   enable:
     - goimports
-
-linters-settings:
-  goimports:
-    local-prefixes: github.com/patrickisgreat/pb-go-api-starter
-
-issues:
-  exclude-dirs:
-    - rpc
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/patrickisgreat/pb-go-api-starter
 ```
 
 The default set (`errcheck`, `govet`, `ineffassign`, `staticcheck`, `unused`,
-and others) is on, plus `goimports` to check import grouping. `errcheck` is the
-one you will meet most: it flags any error return value that is not handled,
-which is why the repository writes `_ = json.Unmarshal(...)` to mark a
-deliberate ignore rather than just dropping the result.
+and others) is on. Version 2 of the tool separates formatters from linters, so
+`goimports` is listed under `formatters` and `golangci-lint fmt` applies it.
+`errcheck` is the one you will meet most: it flags any error return value that
+is not handled, which is why the repository writes `_ = json.Unmarshal(...)` to
+mark a deliberate ignore rather than just dropping the result.
 
 Run with `task lint`. To see what a linter is complaining about, the message
 includes its name in parentheses; `golangci-lint help linters` describes each.

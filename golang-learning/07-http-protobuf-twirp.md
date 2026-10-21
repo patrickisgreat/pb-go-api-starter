@@ -43,7 +43,7 @@ Two things worth pausing on:
   function. It adapts a plain function into a `Handler`. This "function type
   that satisfies an interface" trick appears throughout the standard library.
 - Middleware is just a function from `Handler` to `Handler`. In `main.go`,
-  `instrumentation.InstrumentHandler("Quotes", router)` wraps the router so that
+  `telemetry.InstrumentHandler("Quotes", router)` wraps the router so that
   every request is traced and measured before reaching it. You can chain as
   many as you like.
 
@@ -123,7 +123,7 @@ Twirp maps each RPC to `POST /twirp/<package>.<Service>/<Method>`, accepting
 
 All you provide is a value satisfying the `Quotes` interface, which is
 `handlers.Quotes`. The interceptor option in `main.go`,
-`instrumentation.WithTwirpServerInterceptor()`, wraps every method call in a
+`telemetry.WithTwirpServerInterceptor()`, wraps every method call in a
 trace span.
 
 Twirp also generates clients. Another Go service would call this one with:

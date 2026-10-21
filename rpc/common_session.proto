@@ -1,10 +1,10 @@
-// adapted from common_session.proto for golang.
+// Shared request metadata carried by every RPC in this repository.
 
 syntax = "proto3";
 
 import "google/protobuf/wrappers.proto";
 
-option go_package = "github.com/soundcloud/gokit/v2/twirp/common_session";
+option go_package = "github.com/patrickisgreat/pb-go-api-starter/internal/generated/pb_go_api_starter/session;session";
 
 package proto.patrickisgreat.common.session;
 
@@ -31,7 +31,7 @@ message UserSession {
 
     // propagate variants for A/B testing
     repeated int32 app_variant_ids = 6;
-    // features requested in Firabase A/B tests
+    // features requested in A/B tests
     repeated RequestedFeature app_requested_features = 7;
 }
 

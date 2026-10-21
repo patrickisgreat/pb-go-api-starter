@@ -77,7 +77,7 @@ The fields and methods of `Base` are promoted: `config.Config.Host` reaches
 `Base.Host` directly. This is composition with syntactic sugar, not inheritance.
 There is no overriding, no `super`, and `config` is not a `Base`; it merely has
 one. If you need to pass the embedded part somewhere, write
-`config.Config.Base`, as `context.go` does with `&config.Config.Base`.
+`config.Config.Base`.
 
 ## Interfaces
 

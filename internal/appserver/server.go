@@ -10,7 +10,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/soundcloud/gokit/v2/logger"
+	"github.com/patrickisgreat/pb-go-api-starter/internal/logger"
 )
 
 const TEN_SECONDS time.Duration = 10 * time.Second
@@ -24,7 +24,7 @@ func Start(ctx context.Context, sp *StartParams) {
 	log := logger.Get(ctx)
 
 	if sctx == nil {
-		err := errors.New("Server context must be initialized before start")
+		err := errors.New("server context must be initialized before start")
 		log.Error("Failed to start server", slog.Any("err", err))
 		panic(err)
 	}
@@ -58,7 +58,7 @@ func Start(ctx context.Context, sp *StartParams) {
 	}
 	err := shutdownOtel(ctxWithTimeout)
 	if err != nil {
-		log.Error("Failed to shut down otel", slog.Any("err", err))
+		log.Error("Failed to shut down telemetry", slog.Any("err", err))
 	}
 
 	log.Info("Server stopped")

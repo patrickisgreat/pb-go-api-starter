@@ -75,8 +75,8 @@ chain:
    cancelled. Long operations check it or pass it to libraries that do.
 2. **Deadlines.** `context.WithTimeout` and `context.WithDeadline` create a child
    context that cancels itself at a time.
-3. **Values.** Request-scoped data such as the logger and trace span. gokit's
-   `logger.Get(ctx)` pulls the logger out of the context.
+3. **Values.** Request-scoped data such as the logger and trace span.
+   `logger.Get(ctx)` in `internal/logger` pulls the logger out of the context.
 
 Shutdown uses a timeout:
 

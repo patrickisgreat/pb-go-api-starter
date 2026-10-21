@@ -33,8 +33,9 @@ level and trace sampling are chosen per environment in `terraform/locals.tf`.
 | `OTEL_SDK_DISABLED` | `.env.local`, `.env.test` | `true` switches off telemetry export so local runs need no collector |
 
 `APP_NAME`, `HOST`, `PORT`, `ENVIRONMENT` and `LOG_LEVEL` are fields of
-`baseconfig.Base` from gokit. `LOG_PRETTY` is declared in this repository and is
-the pattern to copy when adding a new setting:
+`baseconfig.Base` in `internal/baseconfig`, the set every service needs.
+`LOG_PRETTY` is specific to this service and is the pattern to copy when adding
+a new setting:
 
 ```go
 type config struct {
@@ -58,10 +59,14 @@ two variables, pointing at the deployed instance for that environment.
 
 In deployed environments Terraform sets the standard OpenTelemetry variables
 (`OTEL_EXPORTER_OTLP_PROTOCOL`, `OTEL_TRACES_EXPORTER`, `OTEL_TRACES_SAMPLER_ARG`
-and so on) plus `OTEL_SC_*` resource attributes that identify the system, owner,
-repository and commit. The full list is `telemetry_config` in
-`terraform/locals.tf`. Trace sampling ratios are 100% in development, 10% in
-staging and 0.1% in production.
+and so on) plus `OTEL_RESOURCE_ATTRIBUTES`, which identifies the environment,
+owner, repository and commit using the OpenTelemetry semantic convention names.
+The full list is `telemetry_config` in `terraform/locals.tf`. Trace sampling
+ratios are 100% in development, 10% in staging and 0.1% in production.
+
+`internal/telemetry` reads these at start-up. Setting `OTEL_TRACES_EXPORTER`,
+`OTEL_METRICS_EXPORTER` or `OTEL_LOGS_EXPORTER` to `none` switches off that one
+signal; `OTEL_SDK_DISABLED=true` switches off all three.
 
 ## Adding a setting
 

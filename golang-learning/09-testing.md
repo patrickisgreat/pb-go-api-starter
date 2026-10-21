@@ -88,7 +88,7 @@ func TestGetQuoteHandler(t *testing.T) {
 
 	// Create a request
 	request := &proto.GetQuoteRequest{
-		UserSession: &common_session.UserSession{
+		UserSession: &session.UserSession{
 			UserUrn:  &wrapperspb.StringValue{Value: "myapp:users:2"},
 			Features: []string{},
 		},
@@ -140,8 +140,9 @@ func TestIsValidUrn(t *testing.T) {
 }
 ```
 
-An anonymous struct slice, a loop, a subtest per row. `go test -run 'TestIsValidUrn/wrong'`
-runs one row. `isValidUrn` is unexported but the test is in `package api`, so
+An anonymous struct slice, a loop, a subtest per row. The real version is in
+`internal/api/validation_test.go`. `go test -run 'TestIsValidUrn/wrong'` runs
+one row. `isValidUrn` is unexported but the test is in `package api`, so
 it can see it. Tests in the same package can test unexported functions; a
 `package api_test` file in the same directory tests only the public surface.
 
@@ -202,7 +203,8 @@ comment, and shown in documentation.
 
 ## Try it
 
-1. Write the table test for `isValidUrn` above and run one row by name.
+1. Run one row of `TestIsValidUrn` by name, then add a row for a URN whose id
+   contains a colon and decide what the right answer is.
 2. Add `TestGetQuoteFlakyHandlerSucceeds` that... cannot be deterministic as
    written. Change `GetQuoteFlakyHandler` to take its random source from the
    `ServerContext` and write the test.

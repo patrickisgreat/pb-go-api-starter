@@ -28,7 +28,7 @@ func isPortOpen(host string, port string) bool {
 	if err != nil {
 		return false
 	}
-	conn.Close()
+	_ = conn.Close()
 	return true
 }
 
@@ -97,7 +97,7 @@ func postRequest(url string, payload any) (map[string]interface{}, int, error) {
 	if err != nil {
 		return nil, 0, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {

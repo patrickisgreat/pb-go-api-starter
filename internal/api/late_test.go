@@ -7,11 +7,11 @@ import (
 	"time"
 
 	qt "github.com/frankban/quicktest"
-	"github.com/soundcloud/gokit/v2/twirp/common_session"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 
 	"github.com/patrickisgreat/pb-go-api-starter/internal/appserver"
 	proto "github.com/patrickisgreat/pb-go-api-starter/internal/generated/pb_go_api_starter/api"
+	"github.com/patrickisgreat/pb-go-api-starter/internal/generated/pb_go_api_starter/session"
 	"github.com/patrickisgreat/pb-go-api-starter/internal/quoterepo"
 	"github.com/patrickisgreat/pb-go-api-starter/internal/quoteservice"
 )
@@ -31,7 +31,7 @@ func TestGetQuoteLateHandler(t *testing.T) {
 
 	// Create a request
 	request := &proto.GetQuoteLateRequest{
-		UserSession: &common_session.UserSession{
+		UserSession: &session.UserSession{
 			UserUrn:  &wrapperspb.StringValue{Value: "myapp:users:2"},
 			Features: []string{},
 		},
@@ -71,7 +71,7 @@ func TestGetQuoteLateHandler_InvalidSession(t *testing.T) {
 
 	// Create a request
 	request := &proto.GetQuoteLateRequest{
-		UserSession: &common_session.UserSession{
+		UserSession: &session.UserSession{
 			UserUrn:  &wrapperspb.StringValue{Value: "myapp:tracks:2"},
 			Features: []string{},
 		},

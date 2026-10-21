@@ -4,10 +4,10 @@ catalog-info.yaml
 manifest.json
 Taskfile.yml
 README.md
-.git-credentials
 
 # dirs
 bin
+.toolkit
 docs
 terraform
 .github

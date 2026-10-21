@@ -45,17 +45,19 @@ is one module. Open `go.mod`:
 ```
 module github.com/patrickisgreat/pb-go-api-starter
 
-go 1.23.8
+go 1.26.0
 
 require (
+	github.com/bakins/twirpotel v0.2.0
 	github.com/frankban/quicktest v1.14.6
-	github.com/soundcloud/gokit/v2 v2.128.0
+	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/twitchtv/twirp v8.1.3+incompatible
-	google.golang.org/protobuf v1.36.10
+	go.opentelemetry.io/contrib/exporters/autoexport v0.72.0
+	...
 )
 
 require (
-	cloud.google.com/go/auth v0.16.1 // indirect
+	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	...
 )
 ```
@@ -65,7 +67,7 @@ require (
   `github.com/patrickisgreat/pb-go-api-starter/internal/api`. Module paths look
   like URLs because `go get` uses them to find the source, but nothing is fetched
   for your own module.
-- **`go 1.23.8`** is the minimum language version. Newer toolchains build it fine.
+- **`go 1.26.0`** is the minimum language version. Newer toolchains build it fine.
 - **`require`** lists dependencies with exact versions. The second block, marked
   `// indirect`, is dependencies of your dependencies. You never edit these blocks
   by hand; `go get` and `go mod tidy` do.
@@ -77,7 +79,7 @@ later download that does not match is rejected. Commit it. Do not edit it.
 
 Go uses semantic versioning and enforces it in the import path: a module at
 major version 2 or later must have `/v2` at the end of its path, which is why you
-see `github.com/soundcloud/gokit/v2`. `+incompatible` on twirp means that module
+see `github.com/cespare/xxhash/v2`. `+incompatible` on twirp means that module
 predates this rule. `v0.0.0-20221221133751-67e37ae746cd` is a pseudo-version
 pointing at a commit that was never tagged.
 
@@ -88,14 +90,9 @@ at `$(go env GOMODCACHE)` (usually `~/go/pkg/mod`), keyed by version, so every
 project on your machine shares one copy of each version.
 
 By default `go` fetches through a public proxy and checks a public checksum
-database. Private modules need to bypass both, which is what `GOPRIVATE` does:
-
-```sh
-export GOPRIVATE=github.com/soundcloud/*
-```
-
-This repository depends on a private module, so this matters. See
-[getting started](../docs/getting-started.md#2-private-module-access).
+database. Every dependency of this repository is public, so that just works. If
+you ever depend on a private module, `GOPRIVATE=github.com/yourorg/*` tells Go
+to bypass the proxy and checksum database for it and clone with `git` instead.
 
 ### Adding a dependency
 
@@ -137,7 +134,8 @@ It is not part of Go; it is a convenience for local development.
 
 1. Run `go build ./...` from the repository root. Then delete
    `internal/generated` and run it again. Read the error, then run `task gen:rpc`
-   and build once more.
+   and build once more. (`git status` will show the files restored unchanged,
+   because the generated code is committed.)
 2. Run `go env` and find `GOMODCACHE`. List that directory and find the twirp
    module.
 3. Cross-compile: from `cmd/app` run
