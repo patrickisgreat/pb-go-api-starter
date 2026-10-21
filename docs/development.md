@@ -86,9 +86,12 @@ so on), opens or updates a release pull request carrying the version bump and
   with the default token do not trigger other workflows, so without it the
   release commit itself is not CI-checked.
 
-Commit messages therefore follow [Conventional Commits](https://www.conventionalcommits.org):
-`feat(api): add ListQuotes` is a minor bump, `fix(quoterepo): ...` a patch, and
-a `BREAKING CHANGE:` footer a major.
+The current version lives in `.release-please-manifest.json` and the bump rules
+in `release-please-config.json`. Commit messages therefore follow
+[Conventional Commits](https://www.conventionalcommits.org): `fix(quoterepo): ...`
+is a patch bump and `feat(api): add ListQuotes` a minor bump. While the major
+version is 0 a `BREAKING CHANGE:` footer also bumps the minor; after 1.0 it bumps
+the major.
 
 ## Backstage
 

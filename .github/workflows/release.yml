@@ -3,7 +3,10 @@
 # with the version bump and changelog, and once that PR's checks pass merges it,
 # creating the tag and the GitHub release.
 #
-# Commits that are not conventional (feat:, fix:, ...) do not trigger a release.
+# Versions are tracked in .release-please-manifest.json and follow 0.x rules
+# from release-please-config.json while the major is 0: fix: bumps the patch,
+# feat: bumps the minor, and a breaking change also bumps the minor. Commits
+# that are not conventional (feat:, fix:, ...) do not trigger a release.
 
 name: Release
 
@@ -23,7 +26,8 @@ jobs:
   release:
     uses: patrickisgreat/actions-toolkit/.github/workflows/release-please.yml@v0
     with:
-      release-type: go
+      config-file: release-please-config.json
+      manifest-file: .release-please-manifest.json
       auto-merge: true
     permissions:
       contents: write
