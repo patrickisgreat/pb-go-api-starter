@@ -1,5 +1,5 @@
 module "alb" {
-  source = "git::ssh://git@github.com/patrickisgreat/tf-tools.git//modules/aws/alb?ref=main"
+  source = "git::ssh://git@github.com/patrickisgreat/tf-tools.git//modules/aws/alb?ref=be137a59d4732673e40310a4883a92085d41bef4"
 
   name       = substr(local.name, 0, 32)
   vpc_id     = data.aws_vpc.this.id

@@ -1,5 +1,5 @@
 module "alerts_topic" {
-  source = "git::ssh://git@github.com/patrickisgreat/tf-tools.git//modules/aws/sns?ref=main"
+  source = "git::ssh://git@github.com/patrickisgreat/tf-tools.git//modules/aws/sns?ref=be137a59d4732673e40310a4883a92085d41bef4"
   count  = var.alerts_enabled ? 1 : 0
 
   name         = "${local.name}-alerts"
@@ -11,7 +11,7 @@ module "alerts_topic" {
 }
 
 module "alarms" {
-  source = "git::ssh://git@github.com/patrickisgreat/tf-tools.git//modules/aws/alb-alarms?ref=main"
+  source = "git::ssh://git@github.com/patrickisgreat/tf-tools.git//modules/aws/alb-alarms?ref=be137a59d4732673e40310a4883a92085d41bef4"
   count  = var.alerts_enabled ? 1 : 0
 
   name                     = local.name

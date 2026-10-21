@@ -66,14 +66,14 @@ terraform/
 ```
 
 Every module is a tf-tools module referenced by git source over SSH, for example
-`git::ssh://git@github.com/patrickisgreat/tf-tools.git//modules/aws/ecs-service?ref=main`:
+`git::ssh://git@github.com/patrickisgreat/tf-tools.git//modules/aws/ecs-service?ref=<commit>`:
 `ecr`, `iam-role`, `ecs-cluster`, `ecs-service`, `ecs-autoscaling`, `alb`,
 `alb-alarms` and `sns`. The only raw resources left here are the log group and
 the service's security group.
 tf-tools is a private repository, so `terraform init` needs an SSH key that can
 read it: your own GitHub key locally, and in CI a read-only deploy key stored as
-the `MODULES_SSH_KEY` secret. Pin `ref` to a tag or commit before relying on it
-in production, and bump every module's `ref` together.
+the `MODULES_SSH_KEY` secret. Every `ref` is pinned to the same tf-tools commit;
+bump them together, and move to a release tag once tf-tools publishes one.
 
 Environment specific values are resolved two ways. `config/<env>/terraform.tfvars`
 supplies the AWS profile and environment name. `locals.tf` then maps the

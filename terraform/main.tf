@@ -1,9 +1,11 @@
-# Reusable building blocks come from github.com/patrickisgreat/tf-tools. The
-# ref is pinned per module source; bump every ref together when upgrading.
-# What remains here is the composition specific to this service.
+# Reusable building blocks come from github.com/patrickisgreat/tf-tools. Every
+# module source is pinned to the same tf-tools commit; bump them together when
+# upgrading, and switch to a release tag once tf-tools publishes one that
+# contains these modules. What remains here is the composition specific to
+# this service.
 
 module "ecr" {
-  source = "git::ssh://git@github.com/patrickisgreat/tf-tools.git//modules/aws/ecr?ref=main"
+  source = "git::ssh://git@github.com/patrickisgreat/tf-tools.git//modules/aws/ecr?ref=be137a59d4732673e40310a4883a92085d41bef4"
 
   name                       = var.system
   image_tag_mutability       = "IMMUTABLE"
@@ -13,7 +15,7 @@ module "ecr" {
 }
 
 module "execution_role" {
-  source = "git::ssh://git@github.com/patrickisgreat/tf-tools.git//modules/aws/iam-role?ref=main"
+  source = "git::ssh://git@github.com/patrickisgreat/tf-tools.git//modules/aws/iam-role?ref=be137a59d4732673e40310a4883a92085d41bef4"
 
   name                  = "${local.name}-execution"
   description           = "Lets ECS pull the ${var.system} image and write its logs"
@@ -35,7 +37,7 @@ data "aws_iam_policy_document" "execute_command" {
 }
 
 module "task_role" {
-  source = "git::ssh://git@github.com/patrickisgreat/tf-tools.git//modules/aws/iam-role?ref=main"
+  source = "git::ssh://git@github.com/patrickisgreat/tf-tools.git//modules/aws/iam-role?ref=be137a59d4732673e40310a4883a92085d41bef4"
 
   name                  = "${local.name}-task"
   description           = "Permissions of the running ${var.system} container"
@@ -47,7 +49,7 @@ module "task_role" {
 }
 
 module "cluster" {
-  source = "git::ssh://git@github.com/patrickisgreat/tf-tools.git//modules/aws/ecs-cluster?ref=main"
+  source = "git::ssh://git@github.com/patrickisgreat/tf-tools.git//modules/aws/ecs-cluster?ref=be137a59d4732673e40310a4883a92085d41bef4"
 
   name = local.ecs_cluster
   tags = local.tags
@@ -82,7 +84,7 @@ resource "aws_security_group" "service" {
 }
 
 module "api_service" {
-  source = "git::ssh://git@github.com/patrickisgreat/tf-tools.git//modules/aws/ecs-service?ref=main"
+  source = "git::ssh://git@github.com/patrickisgreat/tf-tools.git//modules/aws/ecs-service?ref=be137a59d4732673e40310a4883a92085d41bef4"
 
   name        = var.system
   cluster_arn = module.cluster.arn
@@ -133,7 +135,7 @@ module "api_service" {
 }
 
 module "scaling" {
-  source = "git::ssh://git@github.com/patrickisgreat/tf-tools.git//modules/aws/ecs-autoscaling?ref=main"
+  source = "git::ssh://git@github.com/patrickisgreat/tf-tools.git//modules/aws/ecs-autoscaling?ref=be137a59d4732673e40310a4883a92085d41bef4"
 
   cluster_name = module.cluster.name
   service_name = module.api_service.service_name

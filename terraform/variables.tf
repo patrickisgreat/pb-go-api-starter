@@ -86,12 +86,6 @@ variable "ecs_min_tasks" {
   default     = 1
 }
 
-variable "ecs_desired_tasks" {
-  description = "Desired number of api containers to run"
-  type        = number
-  default     = 1
-}
-
 variable "ecs_max_tasks" {
   description = "Maximum number of api containers to run"
   type        = number
